@@ -1,0 +1,234 @@
+<script>
+    /**
+         * Prevent forms from submitting.
+         * */
+
+    function preventFormSubmit() {
+        var forms = document.querySelectorAll('form');
+        for (var i = 0; i < forms.length; i++) {
+            forms[i].addEventListener('submit', function (event) {
+                event.preventDefault();
+            });
+        }
+    }
+
+    window.addEventListener("load", functionInit, true);
+
+    /**
+     * INITIALIZE FUNCTIONS ONLOAD
+     * */
+
+    function functionInit() {
+        preventFormSubmit();
+        getLastTenRows();
+    };
+
+    /**
+     * HANDLE FORM SUBMISSION
+     * */
+
+    function handleFormSubmit(formObject) {
+        google.script.run.withSuccessHandler(createTable).processForm(formObject);
+        setTimeout(function () { $('#myModal').modal('hide'); }, 3000);
+        document.getElementById("message").innerHTML = "<div class='alert alert bg-success text-white'role='alert'>เพิ่มข้อมูลพนักงานเรียบร้อย</div>";
+        document.getElementById("myForm").reset();
+    }
+
+
+
+
+    /**
+      * Clear form when pop-up is closed.  
+      * */
+
+    function clearForm() {
+        document.getElementById("message").innerHTML = "";
+        document.getElementById("myForm").reset();
+    }
+
+    google.script.run.withSuccessHandler(createTable).getAllData();
+
+
+    document.getElementById('resp-spinner5').classList.remove("d-none");
+    document.getElementById('resp-spinner6').classList.remove("d-none");
+    document.getElementById('resp-spinner7').classList.remove("d-none");
+    document.getElementById('resp-spinner8').classList.remove("d-none");
+    document.getElementById('resp-spinner9').classList.remove("d-none");
+    document.getElementById('resp-spinner10').classList.remove("d-none");
+
+    function createTable(dataArray) {
+        $('#btn-close').click()
+        $(document).ready(function () {
+            document.getElementById('resp-spinner5').classList.add("d-none");
+            document.getElementById('resp-spinner6').classList.add("d-none");
+            document.getElementById('resp-spinner7').classList.add("d-none");
+            document.getElementById('resp-spinner8').classList.add("d-none");
+            document.getElementById('resp-spinner9').classList.add("d-none");
+            document.getElementById('resp-spinner10').classList.add("d-none");
+            $('#data-table').DataTable({
+                //data: dataArray,
+
+                data: dataArray.slice(1),
+                columns: [
+                    { title: "รหัสพนักงาน" },
+                    { title: "ชื่อ-สกุล", className: "font-weight-bold", },
+                    { title: "ตำแหน่ง", className: "position" },
+                    { title: "แผนก" },
+                    { title: "เบอรโทร" },
+                    {
+                        title: "สถานะ", className: "font-weight-bold",
+                    },
+                    {
+                        title: "แก้ไข", "render": function (data, type) {
+                            return "<button type='button' class='btn btn-outline-warning btn-xs editBtn' data-toggle='modal' data-target='#myModal' onclick='editData(this);'><i class='fa fa-edit'></i></button>";
+                        }
+                    },
+
+                    {
+                        title: "ลบ", "render": function (data, type) {
+                            return "<button type='button' class='btn btn-outline-danger btn-xs deleteBtn' onclick='deleteData(this);'><i class='fa fa-trash''></i></button>";
+                        }
+                    },
+                ],
+                //  "ordering": false,
+                destroy: true,
+                lengthMenu: [
+                    [5, 10, 25, 50, 100, -1],
+                    ['5', '10', '25', '50', '100', 'ทั้งหมด']
+                ],
+                // การจัดเรียงลำดับของข้อมูลในคอลัมภ์ asc = น้อยไปหามาก desc = มากไปหาน้อย
+                order: [[2, "asc"], [2, "asc"],],
+                language: {
+                    sProcessing: "กำลังดำเนินการ...",
+                    sLengthMenu: "_MENU_ ",
+                    sZeroRecords: "ไม่พบข้อมูล",
+                    sInfo: '<i class="fas fa-angle-double-left"></i> _START_ ถึง _END_ จาก _TOTAL_ <i class="fas fa-angle-double-right"></i>',
+                    sInfoEmpty: "แสดง 0 ถึง 0 จาก 0 แถว",
+                    sInfoFiltered: "(กรองข้อมูล _MAX_ ทุกแถว)",
+                    sInfoPostFix: "",
+                    sSearch: '<i class="fas fa-search" fa-2x></i> ค้นหา:',
+                    sUrl: "",
+                    oPaginate: {
+                        sFirst: "หน้าแรก",
+                        sPrevious: '<i class="fas fa-chevron-left fa-lg" ></i>',
+                        sNext: '<i class="fas fa-chevron-right fa-lg" ></i>',
+                        sLast: "หน้าสุดท้าย"
+                    }
+                },
+            });
+        });
+    }
+
+
+
+    /**
+     * DELETE DATA
+     * */
+
+    function deleteData(el) {
+        Swal.fire({
+            title: 'คุณแน่ใจใช่ไหม?',
+            text: "คุณจะไม่สามารถกู้คืนข้อมูลนี้ได้อีกต่อไป!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'ตกลง!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire(
+                    'ผลการดำเนินการ!',
+                    'ไฟล์ของคุณถูกลบเรียบร้อยแล้ว',
+                )
+                var recordId = el.parentNode.parentNode.cells[0].innerHTML;
+                google.script.run.withSuccessHandler(createTable).deleteData(recordId);
+            }
+        });
+    }
+
+    /** 
+     * EDIT DATA
+     * https://stackoverflow.com/a/32377357/2391195
+     * */
+
+    function editData(el) {
+        var recordId = el.parentNode.parentNode.cells[0].innerHTML;
+        google.script.run.withSuccessHandler(populateForm).getRecordById(recordId);
+    }
+
+    /** 
+     * POPULATE FORM
+     * */
+
+    function populateForm(records) {
+        document.getElementById('RecId').value = records[0][0];
+        document.getElementById('emID').value = records[0][0];
+        document.getElementById('namelastname').value = records[0][1];
+        document.getElementById('team').value = records[0][2];
+        document.getElementById('position').value = records[0][3];
+        document.getElementById('phone').value = records[0][4];
+        document.getElementById('email').value = records[0][5];
+        document.getElementById('contact').value = records[0][6];
+        document.getElementById(records[0][7] == 'ตรวจแล้ว' ? 'Yescheck' : 'Nocheck').checked = true;
+        document.getElementById('dateOfbirth').value = records[0][8];
+        document.getElementById('status').value = records[0][9];
+        document.getElementById("message").innerHTML = "<div class='alert alert-success' role='alert'>ข้อมูลพนักงาน : [ID: " + records[0][1] + "] </div>";
+    }
+
+
+
+    //RETRIVE DATA FROM GOOGLE SHEET FOR COUNTRY DROPDOWN
+    function createCountryDropdown() {
+        //SUBMIT YOUR DATA RANGE FOR DROPDOWN AS THE PARAMETER
+        google.script.run.withSuccessHandler(team).getDropdownList("Helpers!D2:D");
+        google.script.run.withSuccessHandler(position).getDropdownList("Helpers!K3:K");
+        google.script.run.withSuccessHandler(contact).getDropdownList("Helpers!J2:J");
+        google.script.run.withSuccessHandler(status).getDropdownList("Helpers!F2:F");
+    }
+
+    //POPULATE COUNTRY DROPDOWNS
+    function team(values) { //Ref: https://stackoverflow.com/a/53771955/2391195
+        var list = document.getElementById('team');
+        for (var i = 0; i < values.length; i++) {
+            var option = document.createElement("option");
+            option.value = values[i];
+            option.text = values[i];
+            list.appendChild(option);
+        }
+    }
+    function position(values) { //Ref: https://stackoverflow.com/a/53771955/2391195
+        var list = document.getElementById('position');
+        for (var i = 0; i < values.length; i++) {
+            var option = document.createElement("option");
+            option.value = values[i];
+            option.text = values[i];
+            list.appendChild(option);
+        }
+    }
+
+    function contact(values) { //Ref: https://stackoverflow.com/a/53771955/2391195
+        var list = document.getElementById('contact');
+        for (var i = 0; i < values.length; i++) {
+            var option = document.createElement("option");
+            option.value = values[i];
+            option.text = values[i];
+            list.appendChild(option);
+        }
+    }
+
+    function status(values) { //Ref: https://stackoverflow.com/a/53771955/2391195
+        var list = document.getElementById('status');
+        for (var i = 0; i < values.length; i++) {
+            var option = document.createElement("option");
+            option.value = values[i];
+            option.text = values[i];
+            list.appendChild(option);
+        }
+    }
+
+
+    function loading() {
+        window.addEventListener("load", functionInit, false);
+        window.addEventListener("load", preventFormSubmitSearch, true);
+    }
+</script>

@@ -1,0 +1,42 @@
+<table id="data-table" class="table table-striped table-bordered dt-responsive nowrap">
+    <thead class="bg-primary text-dark"></thead>
+  </table>
+
+
+
+
+
+  function sentline() {
+    var ssId = "1ySBHPvg8CcpgEr8_sDIZRuWp06fb6Bj9XXxxxx";
+    var ss = SpreadsheetApp.openById(ssId);
+    var sheet = ss.getSheetByName("แผ่น1");
+    var startRow = 2;
+    var numRows = sheet.getDataRange().getLastRow();
+    var lastCols = sheet.getDataRange().getLastColumn();
+    var dataRange = sheet.getRange(startRow,1,numRows - 1,lastCols);
+    var data = dataRange.getValues();
+    var greecha = 'q8W3DsWKXFTIuzZfrFfhGI7kbYqpoxxxx';  // Token ของคนที่ 1
+    var teera = 'MfDnAV0yWDRkk0BkK6EDO3M0LaP3xxxx';  // Token ของคนที่ 2
+    var to='';
+     
+    for (var i = 0; i < data.length; ++i) {
+      var row = data[i];
+      var message = "ถึง คุณ " + row[3] + "\n\n";
+      message = message + "ได้รับงานต่อไปนี้" + "\n\n";
+      message = message + "งานเลขที่ : " + row[1] + "\n";
+      message = message + "รายละเอียดของงาน : " + row[2] + "\n";
+        
+      var sent = row[4];
+      if (sent != "sent") {
+            // ส่ง line
+        if (row[3] == "greecha") { to = greecha;}
+        else if (row[3] == "teera") {to = teera;}
+   
+            
+        sendMS(to , message);
+      
+        //บันทึกใน sheet ว่าส่งแล้ว
+        sheet.getRange(startRow + i, lastCols).setValue("sent");
+      }
+    }
+  }
